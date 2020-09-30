@@ -40,17 +40,8 @@ public class ICMPEchoPacket extends ICMPPacket {
    *
    * @param size The number of bytes in the packet.
    */
-  public ICMPEchoPacket(int size) {
-    super(size);
-  }
-
-  /**
-   * Creates a new ICMP echo packet that is a copy of a given packet.
-   *
-   * @param packet The packet to replicate.
-   */
-  public ICMPEchoPacket(ICMPEchoPacket packet) {
-    super(packet);
+  public ICMPEchoPacket(byte[] data) {
+    super(data);
   }
 
   @Override

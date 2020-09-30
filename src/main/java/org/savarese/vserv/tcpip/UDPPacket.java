@@ -61,20 +61,9 @@ public class UDPPacket extends IPPacket {
    *
    * @param size The number of bytes in the packet.
    */
-  public UDPPacket(int size) {
-    super(size);
+  public UDPPacket(byte[] data) {
+    super(data);
     __offset = 0;
-  }
-
-  /**
-   * Creates a new UDP packet that is a copy of a given packet.
-   *
-   * @param packet The packet to replicate.
-   */
-  public UDPPacket(UDPPacket packet) {
-    super(packet.size());
-    copy(packet);
-    __offset = packet.__offset;
   }
 
   /**

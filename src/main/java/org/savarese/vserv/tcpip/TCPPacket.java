@@ -117,30 +117,8 @@ public class TCPPacket extends IPPacket {
    */
   public static final byte KIND_SACK = 4;
 
-  /**
-   * The byte offset into the IP packet where the TCP packet begins.
-   */
-  private int __offset;
-
-  /**
-   * Creates a new TCP packet of a given size.
-   *
-   * @param size The number of bytes in the packet.
-   */
-  public TCPPacket(int size) {
-    super(size);
-    __offset = 0;
-  }
-
-  /**
-   * Creates a new TCP packet that is a copy of a given packet.
-   *
-   * @param packet The packet to replicate.
-   */
-  public TCPPacket(TCPPacket packet) {
-    super(packet.size());
-    copy(packet);
-    __offset = packet.__offset;
+  public TCPPacket(byte[] data) {
+    super(data);
   }
 
   /**
@@ -154,8 +132,8 @@ public class TCPPacket extends IPPacket {
     int offset = OFFSET_URG_POINTER + 2;
 
     if (headerLength > offset) {
-      offset += __offset;
-      headerLength += __offset;
+      offset += getIPHeaderByteLength();
+      headerLength += getIPHeaderByteLength();
 
       loop:
       do {
@@ -211,7 +189,11 @@ public class TCPPacket extends IPPacket {
    * @return True only if all of the bits in the mask are set.
    */
   public boolean isSet(int mask) {
-    return ((_data_[__offset + OFFSET_CONTROL] & mask) == mask);
+    return ((_data_[getIPHeaderByteLength() + OFFSET_CONTROL] & mask) == mask);
+  }
+
+  public byte getControl() {
+    return _data_[getIPHeaderByteLength() + OFFSET_CONTROL];
   }
 
   /**
@@ -219,7 +201,7 @@ public class TCPPacket extends IPPacket {
    * @return True if any of the bits in the mask are set.
    */
   public boolean isSetAny(int mask) {
-    return ((_data_[__offset + OFFSET_CONTROL] & mask) != 0);
+    return ((_data_[getIPHeaderByteLength() + OFFSET_CONTROL] & mask) != 0);
   }
 
   /**
@@ -228,7 +210,7 @@ public class TCPPacket extends IPPacket {
    * and ONLY the bits in the mask are set.
    */
   public boolean isSetOnly(int mask) {
-    int flags = _data_[__offset + OFFSET_CONTROL] & 0xff;
+    int flags = _data_[getIPHeaderByteLength() + OFFSET_CONTROL] & 0xff;
     return ((flags & mask) == flags);
   }
 
@@ -239,9 +221,9 @@ public class TCPPacket extends IPPacket {
    * @param mask The bits to set.
    */
   public void addControlFlags(int mask) {
-    int flags = _data_[__offset + OFFSET_CONTROL] & 0xff;
+    int flags = _data_[getIPHeaderByteLength() + OFFSET_CONTROL] & 0xff;
     flags |= mask;
-    _data_[__offset + OFFSET_CONTROL] = (byte) (flags & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_CONTROL] = (byte) (flags & 0xff);
   }
 
   /**
@@ -250,10 +232,10 @@ public class TCPPacket extends IPPacket {
    * @param mask The bits to unset.
    */
   public void removeControlFlags(int mask) {
-    int flags = _data_[__offset + OFFSET_CONTROL] & 0xff;
+    int flags = _data_[getIPHeaderByteLength() + OFFSET_CONTROL] & 0xff;
     flags |= mask;
     flags ^= mask;
-    _data_[__offset + OFFSET_CONTROL] = (byte) (flags & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_CONTROL] = (byte) (flags & 0xff);
   }
 
   /**
@@ -262,21 +244,20 @@ public class TCPPacket extends IPPacket {
    * @param mask The new control header bit mask.
    */
   public void setControlFlags(int mask) {
-    _data_[__offset + OFFSET_CONTROL] = (byte) (mask & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_CONTROL] = (byte) (mask & 0xff);
   }
 
   @Override
   public void setData(byte[] data) {
     super.setData(data);
-    __offset = getIPHeaderByteLength();
   }
 
   /**
    * @return The source port.
    */
   public final int getSourcePort() {
-    return (((_data_[__offset + OFFSET_SOURCE_PORT] & 0xff) << 8) |
-      (_data_[__offset + OFFSET_SOURCE_PORT + 1] & 0xff));
+    return (((_data_[getIPHeaderByteLength() + OFFSET_SOURCE_PORT] & 0xff) << 8) |
+      (_data_[getIPHeaderByteLength() + OFFSET_SOURCE_PORT + 1] & 0xff));
   }
 
   /**
@@ -285,16 +266,16 @@ public class TCPPacket extends IPPacket {
    * @param port The new source port.
    */
   public final void setSourcePort(int port) {
-    _data_[__offset + OFFSET_SOURCE_PORT] = (byte) ((port >> 8) & 0xff);
-    _data_[__offset + OFFSET_SOURCE_PORT + 1] = (byte) (port & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_SOURCE_PORT] = (byte) ((port >> 8) & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_SOURCE_PORT + 1] = (byte) (port & 0xff);
   }
 
   /**
    * @return The destination port.
    */
   public final int getDestinationPort() {
-    return (((_data_[__offset + OFFSET_DESTINATION_PORT] & 0xff) << 8) |
-      (_data_[__offset + OFFSET_DESTINATION_PORT + 1] & 0xff));
+    return (((_data_[getIPHeaderByteLength() + OFFSET_DESTINATION_PORT] & 0xff) << 8) |
+      (_data_[getIPHeaderByteLength() + OFFSET_DESTINATION_PORT + 1] & 0xff));
   }
 
   /**
@@ -303,18 +284,18 @@ public class TCPPacket extends IPPacket {
    * @param port The new destination port.
    */
   public final void setDestinationPort(int port) {
-    _data_[__offset + OFFSET_DESTINATION_PORT] = (byte) ((port >> 8) & 0xff);
-    _data_[__offset + OFFSET_DESTINATION_PORT + 1] = (byte) (port & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_DESTINATION_PORT] = (byte) ((port >> 8) & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_DESTINATION_PORT + 1] = (byte) (port & 0xff);
   }
 
   /**
    * @return The sequence number.
    */
   public final long getSequenceNumber() {
-    return (((_data_[__offset + OFFSET_SEQUENCE] & 0xffL) << 24) |
-      ((_data_[__offset + OFFSET_SEQUENCE + 1] & 0xffL) << 16) |
-      ((_data_[__offset + OFFSET_SEQUENCE + 2] & 0xffL) << 8) |
-      (_data_[__offset + OFFSET_SEQUENCE + 3] & 0xffL));
+    return (((_data_[getIPHeaderByteLength() + OFFSET_SEQUENCE] & 0xffL) << 24) |
+      ((_data_[getIPHeaderByteLength() + OFFSET_SEQUENCE + 1] & 0xffL) << 16) |
+      ((_data_[getIPHeaderByteLength() + OFFSET_SEQUENCE + 2] & 0xffL) << 8) |
+      (_data_[getIPHeaderByteLength() + OFFSET_SEQUENCE + 3] & 0xffL));
   }
 
   /**
@@ -324,17 +305,17 @@ public class TCPPacket extends IPPacket {
    */
   public final void setSequenceNumber(long seq) {
     OctetConverter.intToOctets((int) (seq & 0xffffffff), _data_,
-      __offset + OFFSET_SEQUENCE);
+      getIPHeaderByteLength() + OFFSET_SEQUENCE);
   }
 
   /**
    * @return The acknowledgement number.
    */
   public final long getAckNumber() {
-    return (((_data_[__offset + OFFSET_ACK] & 0xffL) << 24) |
-      ((_data_[__offset + OFFSET_ACK + 1] & 0xffL) << 16) |
-      ((_data_[__offset + OFFSET_ACK + 2] & 0xffL) << 8) |
-      (_data_[__offset + OFFSET_ACK + 3] & 0xffL));
+    return (((_data_[getIPHeaderByteLength() + OFFSET_ACK] & 0xffL) << 24) |
+      ((_data_[getIPHeaderByteLength() + OFFSET_ACK + 1] & 0xffL) << 16) |
+      ((_data_[getIPHeaderByteLength() + OFFSET_ACK + 2] & 0xffL) << 8) |
+      (_data_[getIPHeaderByteLength() + OFFSET_ACK + 3] & 0xffL));
   }
 
   /**
@@ -344,20 +325,19 @@ public class TCPPacket extends IPPacket {
    */
   public final void setAckNumber(long seq) {
     OctetConverter.intToOctets((int) (seq & 0xffffffff), _data_,
-      __offset + OFFSET_ACK);
+      getIPHeaderByteLength() + OFFSET_ACK);
   }
 
   @Override
   public void setIPHeaderLength(int length) {
     super.setIPHeaderLength(length);
-    __offset = getIPHeaderByteLength();
   }
 
   /**
    * @return The TCP header length in 32-bit words.
    */
   public final int getTCPHeaderLength() {
-    return (_data_[__offset + OFFSET_HEADER_LENGTH] & 0xf0) >> 4;
+    return (_data_[getIPHeaderByteLength() + OFFSET_HEADER_LENGTH] & 0xf0) >> 4;
   }
 
   /**
@@ -366,8 +346,8 @@ public class TCPPacket extends IPPacket {
    * @param length The TCP header length in 32-bit words.
    */
   public final void setTCPHeaderLength(int length) {
-    _data_[__offset + OFFSET_HEADER_LENGTH] &= 0x0f;
-    _data_[__offset + OFFSET_HEADER_LENGTH] |= ((length << 4) & 0xf0);
+    _data_[getIPHeaderByteLength() + OFFSET_HEADER_LENGTH] &= 0x0f;
+    _data_[getIPHeaderByteLength() + OFFSET_HEADER_LENGTH] |= ((length << 4) & 0xf0);
   }
 
   /**
@@ -381,8 +361,8 @@ public class TCPPacket extends IPPacket {
    * @return The TCP window size.
    */
   public final int getWindowSize() {
-    return (((_data_[__offset + OFFSET_WINDOW_SIZE] & 0xff) << 8) |
-      (_data_[__offset + OFFSET_WINDOW_SIZE + 1] & 0xff));
+    return (((_data_[getIPHeaderByteLength() + OFFSET_WINDOW_SIZE] & 0xff) << 8) |
+      (_data_[getIPHeaderByteLength() + OFFSET_WINDOW_SIZE + 1] & 0xff));
   }
 
   /**
@@ -391,16 +371,16 @@ public class TCPPacket extends IPPacket {
    * @param window The TCP window size.
    */
   public final void setWindowSize(int window) {
-    _data_[__offset + OFFSET_WINDOW_SIZE] = (byte) ((window >> 8) & 0xff);
-    _data_[__offset + OFFSET_WINDOW_SIZE + 1] = (byte) (window & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_WINDOW_SIZE] = (byte) ((window >> 8) & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_WINDOW_SIZE + 1] = (byte) (window & 0xff);
   }
 
   /**
    * @return The urgent pointer value.
    */
   public final int getUrgentPointer() {
-    return (((_data_[__offset + OFFSET_URG_POINTER] & 0xff) << 8) |
-      (_data_[__offset + OFFSET_URG_POINTER + 1] & 0xff));
+    return (((_data_[getIPHeaderByteLength() + OFFSET_URG_POINTER] & 0xff) << 8) |
+      (_data_[getIPHeaderByteLength() + OFFSET_URG_POINTER + 1] & 0xff));
   }
 
   /**
@@ -409,16 +389,16 @@ public class TCPPacket extends IPPacket {
    * @param pointer The urgent pointer value.
    */
   public final void setUrgentPointer(int pointer) {
-    _data_[__offset + OFFSET_URG_POINTER] = (byte) ((pointer >> 8) & 0xff);
-    _data_[__offset + OFFSET_URG_POINTER + 1] = (byte) (pointer & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_URG_POINTER] = (byte) ((pointer >> 8) & 0xff);
+    _data_[getIPHeaderByteLength() + OFFSET_URG_POINTER + 1] = (byte) (pointer & 0xff);
   }
 
   /**
    * @return The TCP checksum.
    */
   public final int getTCPChecksum() {
-    return (((_data_[__offset + OFFSET_TCP_CHECKSUM] & 0xff) << 8) |
-      (_data_[__offset + OFFSET_TCP_CHECKSUM + 1] & 0xff));
+    return (((_data_[getIPHeaderByteLength() + OFFSET_TCP_CHECKSUM] & 0xff) << 8) |
+      (_data_[getIPHeaderByteLength() + OFFSET_TCP_CHECKSUM + 1] & 0xff));
   }
 
   /**
@@ -426,14 +406,14 @@ public class TCPPacket extends IPPacket {
    * IP packet minus the size of the IP header.
    */
   public final int getTCPPacketByteLength() {
-    return getIPPacketLength() - __offset;
+    return getIPPacketLength() - getIPHeaderByteLength();
   }
 
   /**
    * @return The IP header length plus the TCP header length in bytes.
    */
   public final int getCombinedHeaderByteLength() {
-    return __offset + getTCPHeaderByteLength();
+    return getIPHeaderByteLength() + getTCPHeaderByteLength();
   }
 
   public final int getTCPDataByteLength() {
@@ -479,7 +459,7 @@ public class TCPPacket extends IPPacket {
    * @return The computed TCP checksum.
    */
   public final int computeTCPChecksum(boolean update) {
-    return _computeChecksum_(__offset, __offset + OFFSET_TCP_CHECKSUM,
+    return _computeChecksum_(getIPHeaderByteLength(), getIPHeaderByteLength() + OFFSET_TCP_CHECKSUM,
       getIPPacketLength(), __getVirtualHeaderTotal(),
       update);
   }

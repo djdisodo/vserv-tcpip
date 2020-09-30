@@ -117,8 +117,8 @@ public class IPPacket {
    *
    * @param size The number of bytes in the packet.
    */
-  public IPPacket(int size) {
-    setData(new byte[size]);
+  public IPPacket(byte[] data) {
+    setData(data);
   }
 
   /**
@@ -148,8 +148,8 @@ public class IPPacket {
    *
    * @param data The raw packet byte array to wrap.
    */
-  public void getData(byte[] data) {
-    System.arraycopy(_data_, 0, data, 0, data.length);
+  public byte[] getData() {
+    return _data_;
   }
 
   /**

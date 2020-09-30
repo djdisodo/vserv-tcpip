@@ -71,20 +71,9 @@ public abstract class ICMPPacket extends IPPacket {
    *
    * @param size The number of bytes in the packet.
    */
-  public ICMPPacket(int size) {
-    super(size);
+  public ICMPPacket(byte[] data) {
+    super(data);
     _offset = 0;
-  }
-
-  /**
-   * Creates a new ICMP packet that is a copy of a given packet.
-   *
-   * @param packet The packet to replicate.
-   */
-  public ICMPPacket(ICMPPacket packet) {
-    super(packet.size());
-    copy(packet);
-    _offset = packet._offset;
   }
 
   /**
